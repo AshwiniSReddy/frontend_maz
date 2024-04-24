@@ -1,25 +1,23 @@
-import logo from './logo.svg';
-import './App.css';
+// MainComponent.js
 
-function App() {
+import React from 'react';
+
+import PDFViewer from './PageFlipViewer';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css'; // Import AnnotationLayer CSS
+import 'react-pdf/dist/esm/Page/TextLayer.css'; // Import TextLayer CSS
+import pdf from './images/march.pdf'
+import './App.css'
+
+const App = () => {
+ 
+  console.log(pdf)
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <PDFViewer pdf={pdf} />
     </div>
   );
-}
+};
 
 export default App;
+
