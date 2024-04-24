@@ -67,6 +67,7 @@ import React, { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import FlipPage from 'react-pageflip';
 import './PageFlip.css'
+import axios from 'axios';
 // Import Firebase modules
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { initializeApp } from "firebase/app";
@@ -87,7 +88,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-
+let response;
 // Specify the URL to the worker script
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -108,6 +109,27 @@ const PDFViewer = ({ pdf }) => {
 			"_self"
 		);
 	};
+    
+    const fetchAuthStatus = async () => {
+        try {
+         response = await axios.get('http://localhost:5000/api/auth/check',{ withCredentials: true });
+          console.log(response,"response")
+          if (response.data.isLoggedIn) {
+            setIsAuthenticated(true);
+            setShowMagazine(true)
+          } else {
+            console.log(false)
+            setIsAuthenticated(false);
+          }
+        } catch (error) {
+          console.error('Failed to fetch auth status:', error);
+        }
+      };
+    
+      useEffect(() => {
+        fetchAuthStatus();
+      }, [isAuthenticated]);
+    
 
     // Function to handle Google sign-in
     const handleSignInWithGoogle = async () => {
@@ -131,7 +153,7 @@ const PDFViewer = ({ pdf }) => {
     const onPageClick = (pageNumber) => {
         console.log("Clicked page number:", pageNumber);
         setCurrentPage(pageNumber);
-        if(pageNumber===4){
+        if(pageNumber===4 && !isAuthenticated ){
             setShowMagazine(false);
         }
 
@@ -144,9 +166,17 @@ const PDFViewer = ({ pdf }) => {
     useEffect(() => {
         if (pdf) {
             // Load the first page of the PDF initially
-            setNumPages(4);
+            setNumPages(2);
         }
     }, [pdf]);
+    useEffect(() => {
+        // Check if user is already authenticated on component mount
+        const user = auth.currentUser;
+        if (user) {
+            setIsAuthenticated(true);
+        }
+    }, []);
+
 
     return (
         <div className='pageContainer'>
