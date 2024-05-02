@@ -66,12 +66,15 @@
 import React, { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import FlipPage from 'react-pageflip';
+import { MyContext } from './context';
+import { useContext } from 'react';
 import './PageFlip.css'
 import axios from 'axios';
 // Import Firebase modules
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
+import Order from './order';
 // import { signInWithGoogle } from "./firebase.config";
 
 // Your web app's Firebase configuration
@@ -93,11 +96,12 @@ let response;
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
 const PDFViewer = ({ pdf }) => {
+    const { payment,setpayment,showMagazine, setShowMagazine,loginuserid,setloginuserid ,subscribed,setsubscribed} = useContext(MyContext);
     const [numPages, setNumPages] = useState(null);
     const [error, setError] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
-    const [showMagazine, setShowMagazine] = useState(true);
+    
 
     // Initialize Firebase authentication
     const auth = getAuth();
@@ -109,14 +113,53 @@ const PDFViewer = ({ pdf }) => {
 			"_self"
 		);
 	};
-    
+    const checkMagazineSubscription = async (loginuserid) => {
+        try {
+            // Make a POST request to the API endpoint
+            const response = await axios.post('http://localhost:5000/api/check_subscription', { loginuserid });
+            
+            // Check if the request was successful
+            if (response.status === 200) {
+                // Check if the magazine is subscribed
+                // const { message } = response;
+                console.log(response,"message")
+                if (response.data.isSubscribed === true) {
+                    console.log('User is subscribed to the magazine');
+                    setShowMagazine(true);
+                    return true;
+                } else {
+                    console.log('User is not subscribed to the magazine');
+                    return false;
+                }
+            } else {
+                console.log('Failed to check magazine subscription');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error checking magazine subscription:', error);
+            return false;
+        }
+    };
+
+         
     const fetchAuthStatus = async () => {
         try {
          response = await axios.get('http://localhost:5000/api/auth/check',{ withCredentials: true });
           console.log(response,"response")
           if (response.data.isLoggedIn) {
             setIsAuthenticated(true);
-            setShowMagazine(true)
+            setShowMagazine(false);
+            setloginuserid(response.data.user.email);
+            console.log(response.data)
+          
+            if(loginuserid){
+                const check= checkMagazineSubscription(loginuserid);
+                if(check){
+                    setsubscribed(true)
+                  }
+            }
+           
+              
           } else {
             console.log(false)
             setIsAuthenticated(false);
@@ -138,7 +181,7 @@ const PDFViewer = ({ pdf }) => {
         try {
             const result = await signInWithPopup(auth, provider);
             setIsAuthenticated(true);
-            setShowMagazine(true);
+            setShowMagazine(false)
         } catch (error) {
             console.error("Google sign-in error:", error);
         }
@@ -212,6 +255,13 @@ const PDFViewer = ({ pdf }) => {
                     <button  onClick={googleAuth}>Sign in with Google to view all pages</button>
                 </>
             )}
+            {
+                isAuthenticated && !payment && !showMagazine && !subscribed && (
+                    <Order/>
+
+                   
+                )
+            }
         </div>
     );
 };
