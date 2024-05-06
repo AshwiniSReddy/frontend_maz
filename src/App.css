@@ -40,3 +40,19 @@
 button{
   z-index: 2;
 }
+
+/* .flippage{
+  width: 400px;
+  height: 400px;
+}
+
+.flip-page-container{
+  width: 400px;
+  height: 400px;
+} */
+
+.pdf{
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
