@@ -1,7 +1,8 @@
-import { useEffect, useRef,useContext } from 'react';
+import { useEffect, useRef,useContext,useState } from 'react';
 import crypto from 'crypto-js';
 import PropTypes from 'prop-types';
 import Axios from 'axios';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MyContext } from './context';
 
 
@@ -31,8 +32,25 @@ const RenderRazorpay = ({
 }) => {
   const paymentId = useRef(null);
   const paymentMethod = useRef(null);
+  const navigate = useNavigate();
+  const location = useLocation();
   const { payementConfirm,setpaymentConfirm ,showMagazine, setShowMagazine,loginuserid,setloginuserid,subscribed,setsubscribed} = useContext(MyContext);
   // To load razorpay checkout modal script.
+  const [isExiting, setIsExiting] = useState(false)
+  
+  const updatePayment = async (paymentId) => {
+    try {
+      // Make a POST request to your backend to update the payment status
+      await Axios.post(`${serverBaseUrl}/api/updatepaymentstatus`, {
+        razorpay_payment_id: paymentId,
+        email: loginuserid // Assuming loginuserid is the user's email
+        // Add any other parameters you need to update
+      });
+    } catch (error) {
+      console.error('Error updating payment:', error);
+    }
+  };
+
   const displayRazorpay = async (options) => {
     const res = await loadScript(
       'https://checkout.razorpay.com/v1/checkout.js',
@@ -44,16 +62,24 @@ const RenderRazorpay = ({
     }
     // All information is loaded in options which we will discuss later.
     const rzp1 = new window.Razorpay(options);
-
+    console.log(rzp1,"rzp1")
+    console.log(rzp1.id,"rzp1")
+    updatePayment(rzp1.id);
+    
+   
+    
     // If you want to retreive the chosen payment method.
     rzp1.on('payment.submit', (response) => {
       paymentMethod.current = response.method;
     });
 
+    
+
     // To get payment id in case of failed transaction.
     rzp1.on('payment.failed', (response) => {
       paymentId.current = response.error.metadata.payment_id;
     });
+
 
     // to open razorpay checkout modal.
     rzp1.open();
@@ -99,7 +125,7 @@ const RenderRazorpay = ({
     name: 'My custom title', // Title for your organization to display in checkout modal
     // image, // custom logo  url
     order_id: orderId, // order id from props
-    // This handler menthod is always executed in case of succeeded payment
+    email:loginuserid,    // This handler menthod is always executed in case of succeeded payment
     handler: (response) => {
       console.log('succeeded');
       console.log(response);
@@ -107,7 +133,7 @@ const RenderRazorpay = ({
 
       // Most important step to capture and authorize the payment. This can be done of Backend server.
       const succeeded = crypto.HmacSHA256(`${orderId}|${response.razorpay_payment_id}`, keySecret).toString() === response.razorpay_signature;
-   
+      
       // If successfully authorized. Then we can consider the payment as successful.
       if (succeeded) {
         setpaymentConfirm(true);
@@ -167,7 +193,7 @@ const RenderRazorpay = ({
     retry: {
       enabled: false,
     },
-    timeout: 900, // Time limit in Seconds
+    timeout: 100, // Time limit in Seconds
     theme: {
       color: 'green', // Custom color for your checkout modal.
     },
@@ -176,8 +202,11 @@ const RenderRazorpay = ({
   useEffect(() => {
     console.log('in razorpay');
     displayRazorpay(options);
+
   }, []);
 
+ 
+  
   return null;
 };
 

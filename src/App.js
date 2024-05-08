@@ -7,6 +7,7 @@ import PDFViewer from './PageFlipViewer';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css'; // Import AnnotationLayer CSS
 import 'react-pdf/dist/esm/Page/TextLayer.css'; // Import TextLayer CSS
 import Order from './order';
+import { BrowserRouter as Router } from 'react-router-dom';
 import pdf from './images/march.pdf'
 import { MyContext } from './context';
 
@@ -106,7 +107,8 @@ const fetchAuthStatus = async () => {
 
 
   return (
-    <MyContext.Provider value={{payment,setpayment,payementConfirm,setpaymentConfirm,showMagazine, setShowMagazine,loginuserid,setloginuserid,subscribed,setsubscribed,displayuser,setdisplayuser,subscribetomagazine,setsubscribetomagazine,isAuthenticated,numPages, setNumPages,loading,setLoading}}>
+    <Router>
+       <MyContext.Provider value={{payment,setpayment,payementConfirm,setpaymentConfirm,showMagazine, setShowMagazine,loginuserid,setloginuserid,subscribed,setsubscribed,displayuser,setdisplayuser,subscribetomagazine,setsubscribetomagazine,isAuthenticated,numPages, setNumPages,loading,setLoading}}>
       <div className='pdf'>
         <div>
         {displayuser && <div>welcome: {displayuser}</div>}
@@ -134,6 +136,8 @@ const fetchAuthStatus = async () => {
       
       </div>
     </MyContext.Provider>
+    </Router>
+    
 
   );
 };

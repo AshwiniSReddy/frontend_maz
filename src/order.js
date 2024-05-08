@@ -16,7 +16,7 @@ function Order() {
         try {
             console.log(loginuserid,"login userId")
             const response = await axios.post('http://localhost:5000/api/order', {
-                amount: amount * 100, // Convert amount into lowest unit (e.g., Dollar to Cents)
+                amount: amount, // Convert amount into lowest unit (e.g., Dollar to Cents)
                 currency,
                 keyId: process.env.REACT_APP_RAZORPAY_KEY_ID,
                 keySecret: process.env.REACT_APP_RAZORPAY_KEY_SECRET,
