@@ -4,6 +4,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import FlipPage from 'react-pageflip';
 import { MyContext } from './context';
 import { useContext } from 'react';
+import Loading from './loading';
 import './PageFlip.css'
 import axios from 'axios';
 // Import Firebase modules
@@ -15,7 +16,7 @@ let response;
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
 const PDFViewer = ({ pdf }) => {
-    const { payment,setpayment,showMagazine, setShowMagazine,loginuserid,setloginuserid ,subscribed,setsubscribed,displayuser,setdisplayuser,subscribetomagazine,setsubscribetomagazine,isAuthenticated,numPages, setNumPages} = useContext(MyContext);
+    const { payment,setpayment,showMagazine, setShowMagazine,loginuserid,setloginuserid ,subscribed,setsubscribed,displayuser,setdisplayuser,subscribetomagazine,setsubscribetomagazine,isAuthenticated,numPages, setNumPages,loading,setLoading,success,setSuccess} = useContext(MyContext);
     
     const [error, setError] = useState(null);
     // const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -103,8 +104,10 @@ const PDFViewer = ({ pdf }) => {
 
 
     return (
+        
         <div className='pageContainer'>
             {error && <div>Error loading PDF: {error.message}</div>}
+
            
             {numPages && showMagazine && !payment && !subscribed &&(
                 <FlipPage

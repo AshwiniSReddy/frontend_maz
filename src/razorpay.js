@@ -1,4 +1,5 @@
-import { useEffect, useRef,useContext } from 'react';
+import { useEffect, useRef, useContext,useState } from 'react';
+import axios from 'axios';
 import crypto from 'crypto-js';
 import PropTypes from 'prop-types';
 import Axios from 'axios';
@@ -31,7 +32,9 @@ const RenderRazorpay = ({
 }) => {
   const paymentId = useRef(null);
   const paymentMethod = useRef(null);
-  const { payementConfirm,setpaymentConfirm ,showMagazine, setShowMagazine,loginuserid,setloginuserid,subscribed,setsubscribed} = useContext(MyContext);
+  const [error, setError] = useState(null);
+  
+  const { payementConfirm, setpaymentConfirm, showMagazine, setShowMagazine, loginuserid, setloginuserid, subscribed, setsubscribed, loading, setLoading,success, setSuccess,paymentInProgress, setPaymentInProgress} = useContext(MyContext);
   // To load razorpay checkout modal script.
   const displayRazorpay = async (options) => {
     const res = await loadScript(
@@ -63,31 +66,31 @@ const RenderRazorpay = ({
   // informing server about payment
   const handlePayment = async (status, orderDetails = {}) => {
     try {
-        // Make a POST request to your backend to inform about the payment status
-        await Axios.post(`${serverBaseUrl}/api/payment`, {
-          status,
-          orderDetails,
-        });
-    
-        // If payment is successful, update the payementConfirm state to true
-        if (status === 'succeeded') {
-          setpaymentConfirm(true);
-           setShowMagazine(true);
-           try{
-            await Axios.post(`${serverBaseUrl}/api/magazine_subscribe`, {
-              loginuserid,
-             
-              // Add any other parameters you need to update
-            });
-            setsubscribed(true);
-           }catch(error){
-               console.log("error handling magazine_subscribe ",error)
-           }
-           
+      // Make a POST request to your backend to inform about the payment status
+      await Axios.post(`${serverBaseUrl}/api/payment`, {
+        status,
+        orderDetails,
+      });
+
+      // If payment is successful, update the payementConfirm state to true
+      if (status === 'succeeded') {
+        setpaymentConfirm(true);
+        setShowMagazine(true);
+        try {
+          await Axios.post(`${serverBaseUrl}/api/magazine_subscribe`, {
+            loginuserid,
+
+            // Add any other parameters you need to update
+          });
+          setsubscribed(true);
+        } catch (error) {
+          console.log("error handling magazine_subscribe ", error)
         }
-      } catch (error) {
-        console.error('Error handling payment:', error);
+
       }
+    } catch (error) {
+      console.error('Error handling payment:', error);
+    }
   };
 
 
@@ -107,30 +110,35 @@ const RenderRazorpay = ({
 
       // Most important step to capture and authorize the payment. This can be done of Backend server.
       const succeeded = crypto.HmacSHA256(`${orderId}|${response.razorpay_payment_id}`, keySecret).toString() === response.razorpay_signature;
-   
+
       // If successfully authorized. Then we can consider the payment as successful.
       if (succeeded) {
+
+        paymentId.current = response.razorpay_payment_id;
+        console.log("payment succeded",paymentId.current)
         setpaymentConfirm(true);
         setShowMagazine(true);
-        try{
-           Axios.post(`${serverBaseUrl}/api/magazine_subscribe`, {
+        try {
+          Axios.post(`${serverBaseUrl}/api/magazine_subscribe`, {
             loginuserid,
-           
+
             // Add any other parameters you need to update
           });
           setsubscribed(true);
-         }catch(error){
-             console.log("error handling payment ",error)
-         }
-        
+        } catch (error) {
+          console.log("error handling payment ", error)
+        }
+
         handlePayment('succeeded', {
           orderId,
           paymentId,
+          loginuserid,
           signature: response.razorpay_signature,
         });
       } else {
         handlePayment('failed', {
           orderId,
+          loginuserid,
           paymentId: response.razorpay_payment_id,
         });
       }
@@ -147,12 +155,12 @@ const RenderRazorpay = ({
         if (reason === undefined) {
           console.log('cancelled');
           handlePayment('Cancelled');
-        } 
+        }
         // Reason 2 - When modal is auto closed because of time out
         else if (reason === 'timeout') {
           console.log('timedout');
           handlePayment('timedout');
-        } 
+        }
         // Reason 3 - When payment gets failed.
         else {
           console.log('failed');
@@ -176,7 +184,54 @@ const RenderRazorpay = ({
   useEffect(() => {
     console.log('in razorpay');
     displayRazorpay(options);
-  }, []);
+    const paymentInProgress = window.localStorage.setItem('paymentInProgress', 'true');
+    const amountlocal=window.localStorage.setItem('amountlocal',amount)
+    const handleUnload = async (event) => {
+      event.preventDefault();
+      setLoading(true);
+  
+      // Function to initiate refund after a delay
+      const delayRefund = async () => {
+          // Wait for 5 seconds
+          await new Promise(resolve => setTimeout(resolve, 5000));
+  
+          // Ensure paymentId.current is not null before accessing its current property
+          
+  
+          if (paymentInProgress) {
+            console.log("payement in process")
+              try {
+                  const response = await axios.post('http://localhost:5000/api/refund', {
+                      paymentId: paymentId.current,
+                      amount,
+                  });
+                  setSuccess(true);
+                  if (response) {
+                      setLoading(false);
+                  }
+                  console.log(response.data);
+              } catch (error) {
+                  setError(error.response.data.error);
+              } finally {
+                  setLoading(false);
+              }
+          } else {
+              // Handle the scenario where paymentId.current is null
+              console.log('Payment process was interrupted. Unable to initiate refund.');
+              setLoading(false); // Make sure to set loading state accordingly
+          }
+      };
+  
+      // Call delayRefund after 5 seconds
+      delayRefund();
+  };
+
+    window.addEventListener('beforeunload', handleUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+    };
+  }, [loading]);
 
   return null;
 };
