@@ -99,6 +99,9 @@ const RenderRazorpay = ({
     name: 'My custom title', // Title for your organization to display in checkout modal
     // image, // custom logo  url
     order_id: orderId, // order id from props
+    prefill: {
+      email: loginuserid, // Assuming `loginuserid` is the user's email
+    },
     // This handler menthod is always executed in case of succeeded payment
     handler: (response) => {
       console.log('succeeded');

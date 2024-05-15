@@ -1,3 +1,11 @@
 .pageContainer{
     
 }
+.controls{
+    z-index: 100;
+    position: absolute;
+    /* bottom: 100px; */
+    background-color: black;
+    color: black;
+
+}

@@ -87,6 +87,8 @@ const fetchAuthStatus = async () => {
             const check= checkMagazineSubscription(loginuserid);
             if(check){
                 setsubscribed(true)
+              }else{
+                setsubscribed(false)
               }
         }
        
@@ -100,40 +102,73 @@ const fetchAuthStatus = async () => {
     }
   };
 
+  const checkPaymentAndDisplay = async () => {
+    try {
+        const response = await axios.get(`http://localhost:5000/api/check_payment_status`, { params: { userId: loginuserid }});
+        if (response.data.paymentDone) {
+            setShowMagazine(true);
+            localStorage.setItem('backClicked', 'false');
+            // setNumPages(null); // assuming you reset this to show all pages
+        } else {
+            setShowMagazine(false);
+            setNumPages(4); // show limited pages
+        }
+    } catch (error) {
+        console.error('Error checking payment status:', error);
+    }
+};
+
+  useEffect(() => {
+    window.history.pushState(null, null, window.location.pathname);
+    const onBackButtonEvent = (e) => {
+        e.preventDefault();
+        if (!localStorage.getItem('backClicked')) {
+            localStorage.setItem('backClicked', 'true');
+            checkPaymentAndDisplay();
+        }
+    };
+    window.onpopstate = onBackButtonEvent;
+
+    return () => {
+        window.onpopstate = null;
+    };
+}, []);
+
   useEffect(() => {
     fetchAuthStatus();
   }, [isAuthenticated,showMagazine]);
 
 
   return (
-    <MyContext.Provider value={{payment,setpayment,payementConfirm,setpaymentConfirm,showMagazine, setShowMagazine,loginuserid,setloginuserid,subscribed,setsubscribed,displayuser,setdisplayuser,subscribetomagazine,setsubscribetomagazine,isAuthenticated,numPages, setNumPages,loading,setLoading}}>
-      <div className='pdf'>
-        <div>
-        {displayuser && <div>welcome: {displayuser}</div>}
-            {subscribetomagazine && <div>{subscribetomagazine}</div>}
-        </div>
-      
-        <PDFViewer pdf={pdf} />
-        <PDFViewer pdf={pdf} />
-        <div>
-          {console.log(isAuthenticated,"authenticated")}
-        {!isAuthenticated && numPages >= 4 &&  !showMagazine &&(
-                <>
-                    {console.log("nckdj")}
-                    <button  onClick={googleAuth}>Sign in with Google to view all pages</button>
-                </>
-            )}
-            {
-                isAuthenticated && !payment  && !showMagazine  && !subscribed && (
-                    <Order/>
-
-                   
-                )
-            }
-        </div>
-      
+    <> {localStorage.getItem('backClicked')?<div>please wait for 5 mins</div>: <MyContext.Provider value={{payment,setpayment,payementConfirm,setpaymentConfirm,showMagazine, setShowMagazine,loginuserid,setloginuserid,subscribed,setsubscribed,displayuser,setdisplayuser,subscribetomagazine,setsubscribetomagazine,isAuthenticated,numPages, setNumPages,loading,setLoading}}>
+    <div className='pdf'>
+      <div>
+      {displayuser && <div>welcome: {displayuser}</div>}
+          {subscribetomagazine && <div>{subscribetomagazine}</div>}
       </div>
-    </MyContext.Provider>
+    
+      <PDFViewer pdf={pdf} />
+      <PDFViewer pdf={pdf} />
+      <div>
+        {console.log(isAuthenticated,"authenticated")}
+      {!isAuthenticated && numPages >= 4 &&  !showMagazine &&(
+              <>
+                  {console.log("nckdj")}
+                  <button  onClick={googleAuth}>Sign in with Google to view all pages</button>
+              </>
+          )}
+          {
+              isAuthenticated && !payment  && !showMagazine  && !subscribed && (
+                  <Order/>
+
+                 
+              )
+          }
+      </div>
+    
+    </div>
+  </MyContext.Provider>}  
+</>
 
   );
 };

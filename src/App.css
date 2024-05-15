@@ -56,3 +56,7 @@ button{
   height: 100%;
   display: flex;
 }
+
+.controls{
+  z-index: 2;
+}
