@@ -9,7 +9,7 @@ import 'react-pdf/dist/esm/Page/TextLayer.css'; // Import TextLayer CSS
 import Order from './order';
 import pdf from './images/march.pdf'
 import { MyContext } from './context';
-
+import WaitComponent from './waitComponent';
 
 import './App.css'
 
@@ -24,6 +24,8 @@ const App = () => {
    const [isAuthenticated, setIsAuthenticated] = useState(false);
    const [numPages, setNumPages] = useState(null);
    const [loading,setLoading]=useState(false)
+   const [paymentInProgress,setPaymentInProgress]=useState(false)
+   const paymentInProgress1 = window.localStorage.getItem('paymentInProgress') === 'true';
   console.log(pdf)
   let response;
 
@@ -45,7 +47,7 @@ const App = () => {
             // Check if the magazine is subscribed
             // const { message } = response;
             console.log(response,"message")
-            if (response.data.isSubscribed === true) {
+            if (response.data.isSubscribed === true && response.data.paymentStatus==="captured") {
                 console.log('User is subscribed to the magazine');
                 setsubscribetomagazine("subscribed")
                 setShowMagazine(true);
@@ -62,6 +64,7 @@ const App = () => {
                 return false;
             }
         } else {
+          setsubscribetomagazine(`${displayuser} is not subscribed to the magazine`)
             console.log('Failed to check magazine subscription');
             return false;
         }
@@ -71,6 +74,9 @@ const App = () => {
     }
 };
 
+// setInterval(() => {
+//   checkMagazineSubscription(loginuserid);
+// }, 5000);
      
 const fetchAuthStatus = async () => {
     try {
@@ -118,21 +124,6 @@ const fetchAuthStatus = async () => {
     }
 };
 
-  useEffect(() => {
-    window.history.pushState(null, null, window.location.pathname);
-    const onBackButtonEvent = (e) => {
-        e.preventDefault();
-        if (!localStorage.getItem('backClicked')) {
-            localStorage.setItem('backClicked', 'true');
-            checkPaymentAndDisplay();
-        }
-    };
-    window.onpopstate = onBackButtonEvent;
-
-    return () => {
-        window.onpopstate = null;
-    };
-}, []);
 
   useEffect(() => {
     fetchAuthStatus();
@@ -140,7 +131,7 @@ const fetchAuthStatus = async () => {
 
 
   return (
-    <> {localStorage.getItem('backClicked')?<div>please wait for 5 mins</div>: <MyContext.Provider value={{payment,setpayment,payementConfirm,setpaymentConfirm,showMagazine, setShowMagazine,loginuserid,setloginuserid,subscribed,setsubscribed,displayuser,setdisplayuser,subscribetomagazine,setsubscribetomagazine,isAuthenticated,numPages, setNumPages,loading,setLoading}}>
+    <> <MyContext.Provider value={{payment,setpayment,payementConfirm,setpaymentConfirm,showMagazine, setShowMagazine,loginuserid,setloginuserid,subscribed,setsubscribed,displayuser,setdisplayuser,subscribetomagazine,setsubscribetomagazine,isAuthenticated,numPages, setNumPages,loading,setLoading}}>
     <div className='pdf'>
       <div>
       {displayuser && <div>welcome: {displayuser}</div>}
@@ -167,7 +158,7 @@ const fetchAuthStatus = async () => {
       </div>
     
     </div>
-  </MyContext.Provider>}  
+  </MyContext.Provider>
 </>
 
   );

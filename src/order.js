@@ -5,7 +5,7 @@ import { MyContext } from './context';
 import { useContext } from 'react';
 function Order() {
     const [displayRazorpay, setDisplayRazorpay] = useState(false);
-    const { loginuserid,setloginuserid } = useContext(MyContext);
+    const { loginuserid,setloginuserid,setPaymentInProgress } = useContext(MyContext);
     const [orderDetails, setOrderDetails] = useState({
         orderId: null,
         currency: null,
@@ -29,6 +29,7 @@ function Order() {
                     amount: response.data.amount,
                 });
                 setDisplayRazorpay(true);
+               
             }
         } catch (error) {
             console.error('Error creating order:', error);

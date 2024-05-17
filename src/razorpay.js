@@ -31,7 +31,7 @@ const RenderRazorpay = ({
 }) => {
   const paymentId = useRef(null);
   const paymentMethod = useRef(null);
-  const { payementConfirm,setpaymentConfirm ,showMagazine, setShowMagazine,loginuserid,setloginuserid,subscribed,setsubscribed} = useContext(MyContext);
+  const { payementConfirm,setpaymentConfirm ,showMagazine, setShowMagazine,loginuserid,setloginuserid,subscribed,setsubscribed,setLoading,loading} = useContext(MyContext);
   // To load razorpay checkout modal script.
   const displayRazorpay = async (options) => {
     const res = await loadScript(
@@ -76,7 +76,7 @@ const RenderRazorpay = ({
            try{
             await Axios.post(`${serverBaseUrl}/api/magazine_subscribe`, {
               loginuserid,
-             
+              orderDetails
               // Add any other parameters you need to update
             });
             setsubscribed(true);
@@ -179,7 +179,41 @@ const RenderRazorpay = ({
   useEffect(() => {
     console.log('in razorpay');
     displayRazorpay(options);
-  }, []);
+    const paymentInProgress = window.localStorage.setItem('paymentInProgress', 'true');
+    const amountlocal=window.localStorage.setItem('amountlocal',amount)
+
+    let timer;
+  
+    const handleUnload = async (event) => {
+      event.preventDefault();
+      setLoading(true);
+       timer = setTimeout(async () => {
+        try {
+          const response = await Axios.get('http://localhost:5000/api/check_payment_status',{ loginuserid });
+          if (response.data.paymentStatus==="captured") {
+            // Payment is done, update local storage
+            window.localStorage.setItem('paymentInProgress', 'false');
+            setLoading(false)
+          }else{
+            window.localStorage.setItem('paymentInProgress', 'false');
+            setLoading(false)
+             
+          }
+        } catch (error) {
+          console.error('Error checking payment status:', error);
+        } finally {
+          setLoading(false);
+        }
+      }, 5000); // 5 seconds
+  };
+     
+    window.addEventListener('beforeunload', handleUnload);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('beforeunload', handleUnload);
+    };
+  }, [loading]);
 
   return null;
 };
